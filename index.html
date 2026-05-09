@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Site Management</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: #003087;
+      color: white;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    header h1 { font-size: 1.2rem; font-weight: 600; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .role-badge {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.8rem; display: none;
+    }
+    .role-badge.show  { display: inline-block; }
+    .role-badge.admin  { background: #f59e0b22; border: 1px solid #f59e0b; color: #fcd34d; }
+    .role-badge.editor { background: #10b98122; border: 1px solid #10b981; color: #6ee7b7; }
+
+    .btn-login {
+      background: white; color: #003087;
+      border: none; padding: 7px 18px;
+      border-radius: 6px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 600;
+    }
+    .btn-login:hover { background: #e2e8f0; }
+    .btn-logout {
+      background: transparent; color: #93c5fd;
+      border: 1px solid #93c5fd; padding: 7px 18px;
+      border-radius: 6px; cursor: pointer;
+      font-size: 0.85rem; display: none;
+    }
+    .btn-logout:hover { background: rgba(147,197,253,0.1); }
+    .btn-logout.show { display: inline-block; }
+
+    /* ── NAV ── */
+    nav {
+      background: #00428a;
+      display: flex; gap: 4px; padding: 0 32px;
+    }
+    nav button {
+      background: none; border: none; color: #a0c4ff;
+      padding: 12px 20px; cursor: pointer; font-size: 0.88rem;
+      border-bottom: 3px solid transparent; transition: all 0.2s;
+    }
+    nav button.active, nav button:hover { color: white; border-bottom-color: #60a5fa; }
+    nav button:disabled { color: #4a6fa5; cursor: not-allowed; border-bottom-color: transparent; }
+
+    /* ── MAIN ── */
+    main { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    h2 { font-size: 1.05rem; color: #003087; margin-bottom: 18px; font-weight: 600; }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 11px 16px; border-radius: 6px;
+      margin-bottom: 14px; font-size: 0.88rem; display: none;
+    }
+    .alert.show    { display: block; }
+    .alert.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .alert.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto; background: white;
+      border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead { background: #003087; color: white; }
+    th, td { padding: 11px 16px; text-align: left; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr { border-bottom: 1px solid #e2e8f0; }
+
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+    .badge.Active   { background: #d1fae5; color: #065f46; }
+    .badge.Inactive { background: #fee2e2; color: #991b1b; }
+    .badge.Pending  { background: #fef9c3; color: #854d0e; }
+
+    .btn-del {
+      background: #fee2e2; color: #991b1b;
+      border: none; padding: 5px 12px;
+      border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+    }
+    .btn-del:hover { background: #fca5a5; }
+
+    .search-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+    .search-bar input {
+      flex: 1; padding: 9px 14px;
+      border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem;
+    }
+
+    /* ── FORMS ── */
+    .form-card {
+      background: white; border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 26px; max-width: 540px;
+    }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
+    input, select {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem;
+    }
+    input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    input:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #003087; color: white; border: none;
+      padding: 9px 22px; border-radius: 6px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 600;
+    }
+    .btn-primary:hover { background: #00428a; }
+    .btn-secondary {
+      background: #e2e8f0; color: #374151; border: none;
+      padding: 9px 22px; border-radius: 6px; cursor: pointer;
+      font-size: 0.88rem; margin-left: 8px;
+    }
+
+    /* ── EDIT SEARCH ── */
+    .id-search-box {
+      background: white; border-radius: 10px;
+      padding: 22px; max-width: 540px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 18px;
+    }
+    .id-search-box .row { display: flex; gap: 10px; }
+    .id-search-box input { flex: 1; }
+    .edit-form-card {
+      background: white; border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 26px; max-width: 540px; display: none;
+    }
+    .edit-form-card.show { display: block; }
+
+    /* ── LOGIN MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white; border-radius: 12px;
+      padding: 32px; width: 340px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal h3 { font-size: 1.1rem; color: #003087; margin-bottom: 20px; text-align: center; }
+    .modal-alert {
+      padding: 9px 14px; border-radius: 6px; font-size: 0.85rem;
+      margin-bottom: 12px; background: #fee2e2; color: #991b1b;
+      border: 1px solid #fca5a5; display: none;
+    }
+    .modal-alert.show { display: block; }
+    .modal .form-group { margin-bottom: 14px; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-buttons .btn-primary  { flex: 1; }
+    .modal-buttons .btn-secondary { flex: 1; margin-left: 0; }
+
+    .empty-state { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="header-left">
+    <span>📍</span>
+    <h1>Site Management</h1>
+  </div>
+  <div class="header-right">
+    <span id="userLabel" style="color:#93c5fd;font-size:0.85rem;display:none"></span>
+    <span id="roleBadge" class="role-badge"></span>
+    <button class="btn-login" id="loginBtn" onclick="openLogin()">🔐 Login</button>
+    <button class="btn-logout" id="logoutBtn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <button class="active" id="nav-view" onclick="showPage('view', this)">📋 View All Sites</button>
+  <button id="nav-add"  disabled onclick="showPage('add',  this)">➕ Add Site</button>
+  <button id="nav-edit" disabled onclick="showPage('edit', this)">✏️ Edit Site</button>
+</nav>
+
+<!-- ═══ PAGES ═══ -->
+<main>
+
+  <!-- VIEW -->
+  <div id="page-view" class="page active">
+    <h2>All Sites</h2>
+    <div class="search-bar">
+      <input id="searchInput" type="text" placeholder="🔍 Search by ID or Name..." oninput="filterTable()"/>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Site ID</th><th>Name</th><th>Region</th>
+            <th>Address</th><th>Status</th><th>Created (MYT)</th>
+            <th id="actionCol" style="display:none">Action</th>
+          </tr>
+        </thead>
+        <tbody id="siteTable">
+          <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div id="page-add" class="page">
+    <h2>Add New Site</h2>
+    <div id="addAlert" class="alert"></div>
+    <div class="form-card">
+      <div class="form-group">
+        <label>Site ID <span style="color:red">*</span></label>
+        <input id="add_site_id" type="text" placeholder="e.g. KL-001"/>
+      </div>
+      <div class="form-group">
+        <label>Site Name <span style="color:red">*</span></label>
+        <input id="add_name" type="text" placeholder="e.g. Subang Jaya Substation"/>
+      </div>
+      <div class="form-group">
+        <label>Region</label>
+        <select id="add_region">
+          <option value="">-- Select Region --</option>
+          <option>Selangor</option><option>Kuala Lumpur</option>
+          <option>Southern</option><option>Northern</option><option>Eastern</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input id="add_address" type="text" placeholder="Full address"/>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="add_status">
+          <option>Active</option><option>Inactive</option><option>Pending</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="addSite()">➕ Add Site</button>
+      <button class="btn-secondary" onclick="clearAddForm()">Clear</button>
+    </div>
+  </div>
+
+  <!-- EDIT -->
+  <div id="page-edit" class="page">
+    <h2>Edit Site</h2>
+    <div id="editAlert" class="alert"></div>
+    <div class="id-search-box">
+      <label style="margin-bottom:8px;display:block;font-weight:600;font-size:0.82rem">Enter Site ID to search:</label>
+      <div class="row">
+        <input id="edit_search_id" type="text" placeholder="e.g. KL-001"
+          onkeydown="if(event.key==='Enter') searchSite()"/>
+        <button class="btn-primary" onclick="searchSite()">🔍 Search</button>
+      </div>
+    </div>
+    <div id="editFormCard" class="edit-form-card">
+      <h2 style="margin-bottom:16px">Editing: <span id="editingId" style="color:#003087"></span></h2>
+      <div class="form-group">
+        <label>Site ID</label>
+        <input id="edit_site_id" disabled/>
+      </div>
+      <div class="form-group">
+        <label>Site Name <span style="color:red">*</span></label>
+        <input id="edit_name"/>
+      </div>
+      <div class="form-group">
+        <label>Region</label>
+        <select id="edit_region">
+          <option value="">-- Select Region --</option>
+          <option>Selangor</option><option>Kuala Lumpur</option>
+          <option>Southern</option><option>Northern</option><option>Eastern</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input id="edit_address"/>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="edit_status">
+          <option>Active</option><option>Inactive</option><option>Pending</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="saveSite()">💾 Save Changes</button>
+      <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ LOGIN MODAL ═══ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h3>🔐 Login</h3>
+    <div id="modalAlert" class="modal-alert"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input id="loginUser" type="text" placeholder="Enter username"
+        onkeydown="if(event.key==='Enter') doLogin()"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Enter password"
+        onkeydown="if(event.key==='Enter') doLogin()"/>
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-primary" onclick="doLogin()">Login</button>
+      <button class="btn-secondary" onclick="closeLogin()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────────
+  // Replace with your actual Render backend URL
+  const BACKEND   = "https://site-management-backend.onrender.com";
+  const API       = `${BACKEND}/api/sites`;
+  const LOGIN_URL = `${BACKEND}/api/auth/login`;
+
+  let allSites    = [];
+  let currentRole = null;
+  let authToken   = null;
+
+  // ── NAVIGATION ─────────────────────────────────────────────
+  function showPage(page, btn) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.getElementById("page-" + page).classList.add("active");
+    if (btn) btn.classList.add("active");
+    if (page === "view") loadSites();
+  }
+
+  // ── APPLY ROLE UI ──────────────────────────────────────────
+  function applyRole(role) {
+    currentRole = role;
+    document.getElementById("nav-add").disabled  = !(role === "editor" || role === "admin");
+    document.getElementById("nav-edit").disabled = !(role === "editor" || role === "admin");
+    document.getElementById("actionCol").style.display = role === "admin" ? "" : "none";
+    loadSites();
+  }
+
+  // ── LOGIN ──────────────────────────────────────────────────
+  function openLogin() {
+    document.getElementById("loginModal").classList.add("show");
+    document.getElementById("loginUser").focus();
+  }
+
+  function closeLogin() {
+    document.getElementById("loginModal").classList.remove("show");
+    document.getElementById("loginUser").value = "";
+    document.getElementById("loginPass").value = "";
+    document.getElementById("modalAlert").classList.remove("show");
+  }
+
+  async function doLogin() {
+    const username = document.getElementById("loginUser").value.trim();
+    const password = document.getElementById("loginPass").value;
+    const alertEl  = document.getElementById("modalAlert");
+
+    if (!username || !password) {
+      alertEl.textContent = "Please enter username and password.";
+      alertEl.classList.add("show"); return;
+    }
+
+    const res  = await fetch(LOGIN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alertEl.textContent = `❌ ${data.error}`;
+      alertEl.classList.add("show"); return;
+    }
+
+    authToken = data.token;
+    const role = data.role;
+
+    document.getElementById("loginBtn").style.display  = "none";
+    document.getElementById("logoutBtn").classList.add("show");
+    document.getElementById("userLabel").textContent   = `👤 ${username}`;
+    document.getElementById("userLabel").style.display = "inline";
+
+    const badge = document.getElementById("roleBadge");
+    badge.textContent = role === "admin" ? "⭐ Admin" : "✏️ Editor";
+    badge.className   = `role-badge show ${role}`;
+
+    applyRole(role);
+    closeLogin();
+  }
+
+  function logout() {
+    authToken   = null;
+    currentRole = null;
+    document.getElementById("loginBtn").style.display  = "inline-block";
+    document.getElementById("logoutBtn").classList.remove("show");
+    document.getElementById("userLabel").style.display = "none";
+    document.getElementById("roleBadge").className     = "role-badge";
+    showPage("view", document.getElementById("nav-view"));
+    applyRole(null);
+  }
+
+  // ── LOAD SITES ─────────────────────────────────────────────
+  async function loadSites() {
+    try {
+      const res = await fetch(API);
+      allSites  = await res.json();
+      renderTable(allSites);
+    } catch {
+      document.getElementById("siteTable").innerHTML =
+        `<tr><td colspan="7" class="empty-state">⚠️ Cannot connect to server</td></tr>`;
+    }
+  }
+
+  function formatMYT(utcString) {
+    return new Date(utcString).toLocaleString("en-MY", {
+      timeZone: "Asia/Kuala_Lumpur",
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+  }
+
+  function renderTable(sites) {
+    const tbody = document.getElementById("siteTable");
+    if (!sites.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No sites found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = sites.map(s => `
+      <tr>
+        <td><strong>${s.site_id}</strong></td>
+        <td>${s.name}</td>
+        <td>${s.region  || "—"}</td>
+        <td>${s.address || "—"}</td>
+        <td><span class="badge ${s.status}">${s.status}</span></td>
+        <td>${formatMYT(s.created_at)}</td>
+        ${currentRole === "admin"
+          ? `<td><button class="btn-del" onclick="deleteSite('${s.site_id}')">🗑️ Delete</button></td>`
+          : ""}
+      </tr>
+    `).join("");
+  }
+
+  function filterTable() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    renderTable(allSites.filter(s =>
+      s.site_id.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)
+    ));
+  }
+
+  // ── AUTH HEADERS ───────────────────────────────────────────
+  function authHeaders() {
+    return { "Content-Type": "application/json", "x-auth-token": authToken };
+  }
+
+  // ── ADD SITE ───────────────────────────────────────────────
+  async function addSite() {
+    const site_id = document.getElementById("add_site_id").value.trim();
+    const name    = document.getElementById("add_name").value.trim();
+    const region  = document.getElementById("add_region").value;
+    const address = document.getElementById("add_address").value.trim();
+    const status  = document.getElementById("add_status").value;
+
+    if (!site_id || !name) {
+      showAlert("addAlert", "error", "⚠️ Site ID and Name are required."); return;
+    }
+
+    const res  = await fetch(API, {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ site_id, name, region, address, status })
+    });
+    const data = await res.json();
+
+    if (!res.ok) showAlert("addAlert", "error", `❌ ${data.error}`);
+    else { showAlert("addAlert", "success", `✅ ${data.message}`); clearAddForm(); }
+  }
+
+  function clearAddForm() {
+    ["add_site_id","add_name","add_address"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("add_region").value = "";
+    document.getElementById("add_status").value = "Active";
+  }
+
+  // ── EDIT SITE ──────────────────────────────────────────────
+  async function searchSite() {
+    const id = document.getElementById("edit_search_id").value.trim().toUpperCase();
+    if (!id) { showAlert("editAlert", "error", "⚠️ Please enter a Site ID."); return; }
+
+    const res  = await fetch(`${API}/${id}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      showAlert("editAlert", "error", `❌ ${data.error}`);
+      document.getElementById("editFormCard").classList.remove("show"); return;
+    }
+
+    hideAlert("editAlert");
+    document.getElementById("editingId").textContent  = data.site_id;
+    document.getElementById("edit_site_id").value = data.site_id;
+    document.getElementById("edit_name").value    = data.name;
+    document.getElementById("edit_region").value  = data.region  || "";
+    document.getElementById("edit_address").value = data.address || "";
+    document.getElementById("edit_status").value  = data.status;
+    document.getElementById("editFormCard").classList.add("show");
+  }
+
+  async function saveSite() {
+    const id      = document.getElementById("edit_site_id").value;
+    const name    = document.getElementById("edit_name").value.trim();
+    const region  = document.getElementById("edit_region").value;
+    const address = document.getElementById("edit_address").value.trim();
+    const status  = document.getElementById("edit_status").value;
+
+    if (!name) { showAlert("editAlert", "error", "⚠️ Name is required."); return; }
+
+    const res  = await fetch(`${API}/${id}`, {
+      method: "PUT", headers: authHeaders(),
+      body: JSON.stringify({ name, region, address, status })
+    });
+    const data = await res.json();
+
+    if (!res.ok) showAlert("editAlert", "error", `❌ ${data.error}`);
+    else {
+      showAlert("editAlert", "success", `✅ ${data.message}`);
+      document.getElementById("editFormCard").classList.remove("show");
+      document.getElementById("edit_search_id").value = "";
+    }
+  }
+
+  function cancelEdit() {
+    document.getElementById("editFormCard").classList.remove("show");
+    document.getElementById("edit_search_id").value = "";
+    hideAlert("editAlert");
+  }
+
+  // ── DELETE ─────────────────────────────────────────────────
+  async function deleteSite(id) {
+    if (!confirm(`Delete site "${id}"? This cannot be undone.`)) return;
+    const res  = await fetch(`${API}/${id}`, { method: "DELETE", headers: authHeaders() });
+    const data = await res.json();
+    if (res.ok) loadSites();
+    else alert(data.error);
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────
+  function showAlert(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className   = `alert ${type} show`;
+    el.textContent = msg;
+    setTimeout(() => hideAlert(id), 5000);
+  }
+  function hideAlert(id) { document.getElementById(id).className = "alert"; }
+
+  // Init
+  loadSites();
+</script>
+</body>
+</html>
